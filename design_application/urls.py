@@ -7,9 +7,10 @@ urlpatterns = [
     path('run_app/',views.run_app, name="run_app")
 ]
 
+
+
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -21,7 +22,6 @@ urlpatterns = [
             text-align: center;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             height: 100vh;
             margin: 0;
             position: relative;
@@ -31,32 +31,29 @@ urlpatterns = [
             position: absolute;
             top: 10px;
             right: 10px;
-            width: 150px;
+            width: 120px;
             height: auto;
         }
 
         #uploadContainer {
             background-color: aliceblue;
-            padding: 20px;
+            padding: 15px;
             border-radius: 10px;
             box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
             width: 50%;
-            min-width: 300px;
+            min-width: 280px;
             margin: auto;
-        }
-
-        form {
             display: flex;
-            flex-direction: column;
             align-items: center;
+            justify-content: space-between;
         }
 
         input[type="file"] {
-            margin-top: 10px;
+            flex: 1;
+            padding: 10px;
         }
 
         button {
-            margin-top: 15px;
             padding: 10px 20px;
             background-color: #007BFF;
             color: white;
@@ -69,61 +66,92 @@ urlpatterns = [
             background-color: #005663;
         }
 
+        /* Output section styling */
+        #resultsContainer {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: flex-start;
+            margin-top: 20px;
+            width: 95%;
+            height: 70vh;
+        }
+
+        #imageContainer {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+        }
+
+        #imageContainer img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #textContainer {
+            flex: 2;
+            padding: 10px;
+            overflow-y: auto;
+            max-height: 70vh;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            table-layout: auto;
-            margin-top: 20px;
         }
 
         th, td {
             border: 1px solid black;
-            padding: 12px;
+            padding: 10px;
             text-align: left;
-            word-break: break-word;
+            word-wrap: break-word;
             overflow-x: auto;
-            max-width: 100%;
             white-space: pre-wrap;
         }
 
-        #results {
-            border: 1px solid #ccc;
-            padding: 10px;
-            max-height: 400px;
-            overflow-y: scroll;
-            margin-top: 20px;
+        th {
+            background-color: #f2f2f2;
         }
     </style>
 </head>
-
 <body>
 
     <img src="citilogo2.png" alt="Website Logo" id="logo">
 
     <h1>PASSPORT KYC INFO</h1>
 
+    <!-- Upload Section -->
     <div id="uploadContainer">
-        <form id="uploadForm" action="/upload/" method="post" enctype="multipart/form-data">
-            <label for="files">Select Images (Upload Multiple Images: jpeg, jpg, png, etc...):</label><br><br>
-            <input type="file" id="files" name="files" multiple><br><br>
-            <button type="submit">Upload and Process</button>
-        </form>
+        <input type="file" id="files" name="files" multiple>
+        <button id="uploadBtn">Upload and Process</button>
     </div>
 
+    <!-- Results Section -->
     <h2>Uploaded Files and Results:</h2>
-
-    <div id="results"></div>
+    <div id="resultsContainer">
+        <div id="imageContainer"></div>
+        <div id="textContainer"></div>
+    </div>
 
     <script>
-        const form = document.getElementById('uploadForm');
-        const resultsDiv = document.getElementById('results');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const fileInput = document.getElementById('files');
+        const imageContainer = document.getElementById('imageContainer');
+        const textContainer = document.getElementById('textContainer');
 
-        form.addEventListener('submit', async (event) => {
-            event.preventDefault(); // Prevent form submission
+        uploadBtn.addEventListener('click', async () => {
+            if (fileInput.files.length === 0) {
+                alert("Please select a file first.");
+                return;
+            }
 
-            const formData = new FormData(form);
+            const formData = new FormData();
+            for (let file of fileInput.files) {
+                formData.append("files", file);
+            }
 
-            // Send the file to the server using fetch
             const response = await fetch('/upload/', {
                 method: 'POST',
                 body: formData
@@ -131,94 +159,15 @@ urlpatterns = [
 
             const result = await response.text();
 
-            // Append the result to the resultsDiv
-            resultsDiv.innerHTML += result + '<hr>';
+            // Clear previous content
+            imageContainer.innerHTML = '';
+            textContainer.innerHTML = '';
 
-            form.reset(); // Reset the form for the next file
+            // Append the result to the results container
+            textContainer.innerHTML = result;
+            fileInput.value = ""; // Reset file input
         });
     </script>
 
 </body>
 </html>
-
-
-
-from fastapi import FastAPI, File, UploadFile, BackgroundTasks
-from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
-import shutil
-import os
-import asyncio
-from typing import List
-from all_passport_app import all_passport  # Import your function
-
-app = FastAPI()
-
-if not os.path.exists("static"):
-    os.makedirs("static")
-
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-@app.get("/", response_class=HTMLResponse)
-async def read_root():
-    with open("passport_index_2.html", "r", encoding="utf-8") as f:
-        return HTMLResponse(content=f.read())
-
-async def delete_files_after_response(file_paths: List[str]):
-    await asyncio.sleep(20)
-    for file_path in file_paths:
-        if os.path.exists(file_path):
-            os.remove(file_path)
-
-@app.post("/upload/", response_class=HTMLResponse)
-async def upload_images(files: List[UploadFile] = File(...), background_tasks: BackgroundTasks = BackgroundTasks()):
-    html_content = ""
-
-    uploaded_file_paths = []
-
-    for file in files:
-        try:
-            image_path = f"static/{file.filename}"
-            with open(image_path, "wb") as buffer:
-                shutil.copyfileobj(file.file, buffer)
-            
-            uploaded_file_paths.append(image_path)
-
-            result = all_passport(image_path)
-            print(result, '######')
-
-            # Image display section
-            html_content += f"""
-            <div style="display: flex; align-items: center;">
-                <div style="flex: 1; text-align: center;">
-                    <img src="/static/{file.filename}" alt="{file.filename}" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 5px;">
-                </div>
-                <div style="flex: 2; padding-left: 20px; overflow-y: auto; max-height: 500px;">
-                    <table border="1" style="border-collapse: collapse; width: 100%;">
-                        <tr>
-                            <th style="padding: 10px; background-color: #f2f2f2;">Label</th>
-                            <th style="padding: 10px; background-color: #f2f2f2;">Extracted Text</th>
-                        </tr>
-            """
-
-            for row in result:
-                label = row[0]
-                text_value = row[1]
-
-                text_value = text_value.replace("<", "&lt;")
-
-                html_content += f"""
-                <tr>
-                    <td style="padding: 10px;">{label}</td>
-                    <td style="padding: 10px; word-break: break-word; white-space: pre-wrap;">{text_value}</td>
-                </tr>
-                """
-
-            html_content += "</table></div></div><hr>"
-
-        except Exception as e:
-            html_content += f"<h3>Error processing {file.filename}: {str(e)}</h3><hr>"
-
-    background_tasks.add_task(delete_files_after_response, uploaded_file_paths)
-
-    return HTMLResponse(content=html_content)
