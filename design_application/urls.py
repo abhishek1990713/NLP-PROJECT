@@ -20,11 +20,8 @@ urlpatterns = [
             background-color: rgb(153, 193, 227);
             font-family: Arial, Helvetica, sans-serif;
             text-align: center;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
             margin: 0;
-            position: relative;
+            padding: 0;
         }
 
         #logo {
@@ -35,6 +32,7 @@ urlpatterns = [
             height: auto;
         }
 
+        /* Upload section */
         #uploadContainer {
             background-color: aliceblue;
             padding: 15px;
@@ -66,33 +64,38 @@ urlpatterns = [
             background-color: #005663;
         }
 
-        /* Output section styling */
+        /* Output section - splits into two equal halves */
         #resultsContainer {
             display: flex;
-            flex-direction: row;
-            justify-content: center;
-            align-items: flex-start;
-            margin-top: 20px;
             width: 95%;
             height: 70vh;
+            margin: auto;
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
         }
 
         #imageContainer {
-            flex: 1;
+            width: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f8f9fa;
             padding: 10px;
-            text-align: center;
         }
 
         #imageContainer img {
-            max-width: 100%;
-            height: auto;
+            max-width: 80%;
+            max-height: 90%;
             border: 1px solid #ccc;
             border-radius: 5px;
         }
 
         #textContainer {
-            flex: 2;
-            padding: 10px;
+            width: 50%;
+            padding: 15px;
             overflow-y: auto;
             max-height: 70vh;
         }
@@ -104,7 +107,7 @@ urlpatterns = [
 
         th, td {
             border: 1px solid black;
-            padding: 10px;
+            padding: 8px;
             text-align: left;
             word-wrap: break-word;
             overflow-x: auto;
@@ -163,6 +166,14 @@ urlpatterns = [
             imageContainer.innerHTML = '';
             textContainer.innerHTML = '';
 
+            // Display uploaded image
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                imageContainer.innerHTML = `<img src="${e.target.result}" alt="Uploaded Image">`;
+            };
+            reader.readAsDataURL(file);
+
             // Append the result to the results container
             textContainer.innerHTML = result;
             fileInput.value = ""; // Reset file input
@@ -171,3 +182,4 @@ urlpatterns = [
 
 </body>
 </html>
+
