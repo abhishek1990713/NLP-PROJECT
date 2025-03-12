@@ -126,7 +126,7 @@ urlpatterns = [
 
     <!-- Upload Section -->
     <div id="uploadContainer">
-        <input type="file" id="files" name="files" multiple>
+        <input type="file" id="files" name="files">
         <button id="uploadBtn">Upload and Process</button>
     </div>
 
@@ -150,41 +150,48 @@ urlpatterns = [
             }
 
             const formData = new FormData();
-            for (let file of fileInput.files) {
-                formData.append("files", file);
-            }
+            formData.append("file", fileInput.files[0]);
 
-            const response = await fetch('/upload/', {
-                method: 'POST',
-                body: formData
-            });
+            try {
+                const response = await fetch('/upload/', {
+                    method: 'POST',
+                    body: formData
+                });
 
-            const result = await response.json(); // Assuming backend returns JSON
-
-            // Clear previous content
-            imageContainer.innerHTML = '';
-            textContainer.innerHTML = '';
-
-            // Display uploaded image (Left Side)
-            const file = fileInput.files[0];
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                imageContainer.innerHTML = `<img src="${e.target.result}" alt="Uploaded Image">`;
-            };
-            reader.readAsDataURL(file);
-
-            // Convert JSON data into a table format (Right Side)
-            let tableHTML = `<table><tr><th>Field</th><th>Value</th></tr>`;
-            for (const key in result) {
-                if (!result[key].includes("<img")) {  // Prevent image from appearing in table
-                    tableHTML += `<tr><td>${key}</td><td>${result[key]}</td></tr>`;
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
                 }
-            }
-            tableHTML += `</table>`;
 
-            // Display table
-            textContainer.innerHTML = tableHTML;
-            fileInput.value = ""; // Reset file input
+                const result = await response.json(); // Assuming backend returns JSON
+
+                // Clear previous content
+                imageContainer.innerHTML = '';
+                textContainer.innerHTML = '';
+
+                // Display uploaded image (Left Side)
+                const file = fileInput.files[0];
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    imageContainer.innerHTML = `<img src="${e.target.result}" alt="Uploaded Image">`;
+                };
+                reader.readAsDataURL(file);
+
+                // Convert JSON data into a table format (Right Side)
+                let tableHTML = `<table><tr><th>Field</th><th>Value</th></tr>`;
+                for (const key in result) {
+                    if (key !== "image") {  // Ignore image key if present in response
+                        tableHTML += `<tr><td>${key}</td><td>${result[key]}</td></tr>`;
+                    }
+                }
+                tableHTML += `</table>`;
+
+                // Display table
+                textContainer.innerHTML = tableHTML;
+                fileInput.value = ""; // Reset file input
+            } catch (error) {
+                console.error("Error uploading file:", error);
+                alert("Failed to process file. Please try again.");
+            }
         });
     </script>
 
