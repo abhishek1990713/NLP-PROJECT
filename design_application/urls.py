@@ -19,8 +19,11 @@ urlpatterns = [
             background-color: rgb(153, 193, 227);
             font-family: Arial, Helvetica, sans-serif;
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
             margin: 0;
-            padding: 0;
+            position: relative;
         }
 
         #logo {
@@ -31,7 +34,6 @@ urlpatterns = [
             height: auto;
         }
 
-        /* Upload section */
         #uploadContainer {
             background-color: aliceblue;
             padding: 15px;
@@ -63,38 +65,33 @@ urlpatterns = [
             background-color: #005663;
         }
 
-        /* Output section - splits into two equal halves */
+        /* Output section styling */
         #resultsContainer {
             display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: flex-start;
+            margin-top: 20px;
             width: 95%;
             height: 70vh;
-            margin: auto;
-            margin-top: 20px;
-            border: 1px solid #ccc;
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
         }
 
         #imageContainer {
-            width: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #f8f9fa;
+            flex: 1;
             padding: 10px;
+            text-align: center;
         }
 
         #imageContainer img {
             max-width: 100%;
-            max-height: 100%;
+            height: auto;
             border: 1px solid #ccc;
             border-radius: 5px;
         }
 
         #textContainer {
-            width: 50%;
-            padding: 15px;
+            flex: 2;
+            padding: 10px;
             overflow-y: auto;
             max-height: 70vh;
         }
@@ -106,7 +103,7 @@ urlpatterns = [
 
         th, td {
             border: 1px solid black;
-            padding: 8px;
+            padding: 10px;
             text-align: left;
             word-wrap: break-word;
             overflow-x: auto;
@@ -126,7 +123,7 @@ urlpatterns = [
 
     <!-- Upload Section -->
     <div id="uploadContainer">
-        <input type="file" id="files" name="files">
+        <input type="file" id="files" name="files" multiple>
         <button id="uploadBtn">Upload and Process</button>
     </div>
 
@@ -150,52 +147,27 @@ urlpatterns = [
             }
 
             const formData = new FormData();
-            formData.append("file", fileInput.files[0]);
-
-            try {
-                const response = await fetch('/upload/', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-
-                const result = await response.json(); // Assuming backend returns JSON
-
-                // Clear previous content
-                imageContainer.innerHTML = '';
-                textContainer.innerHTML = '';
-
-                // Display uploaded image (Left Side)
-                const file = fileInput.files[0];
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    imageContainer.innerHTML = `<img src="${e.target.result}" alt="Uploaded Image">`;
-                };
-                reader.readAsDataURL(file);
-
-                // Convert JSON data into a table format (Right Side)
-                let tableHTML = `<table><tr><th>Field</th><th>Value</th></tr>`;
-                for (const key in result) {
-                    if (key !== "image") {  // Ignore image key if present in response
-                        tableHTML += `<tr><td>${key}</td><td>${result[key]}</td></tr>`;
-                    }
-                }
-                tableHTML += `</table>`;
-
-                // Display table
-                textContainer.innerHTML = tableHTML;
-                fileInput.value = ""; // Reset file input
-            } catch (error) {
-                console.error("Error uploading file:", error);
-                alert("Failed to process file. Please try again.");
+            for (let file of fileInput.files) {
+                formData.append("files", file);
             }
+
+            const response = await fetch('/upload/', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.text();
+
+            // Clear previous content
+            imageContainer.innerHTML = '';
+            textContainer.innerHTML = '';
+
+            // Append the result to the results container
+            textContainer.innerHTML = result;
+            fileInput.value = ""; // Reset file input
         });
     </script>
 
 </body>
 </html>
-
 
