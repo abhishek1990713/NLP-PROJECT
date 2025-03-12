@@ -8,7 +8,6 @@ urlpatterns = [
 ]
 
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,30 +27,27 @@ urlpatterns = [
             position: absolute;
             top: 10px;
             right: 10px;
-            width: 120px;
+            width: 100px;
             height: auto;
         }
 
-        /* Upload section */
+        /* Upload Section */
         #uploadContainer {
-            background-color: aliceblue;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-            width: 50%;
-            min-width: 280px;
-            margin: auto;
             display: flex;
+            justify-content: center;
             align-items: center;
-            justify-content: space-between;
+            margin-top: 20px;
+            gap: 20px;
         }
 
-        input[type="file"] {
-            flex: 1;
+        #fileInput {
             padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid #ccc;
         }
 
-        button {
+        #uploadBtn {
             padding: 10px 20px;
             background-color: #007BFF;
             color: white;
@@ -60,58 +56,57 @@ urlpatterns = [
             cursor: pointer;
         }
 
-        button:hover {
-            background-color: #005663;
+        #uploadBtn:hover {
+            background-color: #0056b3;
         }
 
-        /* Output section - splits into two equal halves */
-        #resultsContainer {
+        /* Output Section */
+        #outputContainer {
             display: flex;
-            width: 95%;
-            height: 70vh;
-            margin: auto;
+            justify-content: space-between;
             margin-top: 20px;
-            border: 1px solid #ccc;
-            background: white;
+            padding: 20px;
+            background-color: white;
             border-radius: 10px;
-            overflow: hidden;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         #imageContainer {
             width: 50%;
             display: flex;
-            align-items: center;
             justify-content: center;
-            background-color: #f8f9fa;
-            padding: 10px;
+            align-items: center;
         }
 
         #imageContainer img {
-            max-width: 80%;
-            max-height: 90%;
-            border: 1px solid #ccc;
+            max-width: 100%;
+            max-height: 400px;
             border-radius: 5px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
         }
 
         #textContainer {
             width: 50%;
-            padding: 15px;
-            overflow-y: auto;
-            max-height: 70vh;
+            overflow: auto;
+            max-height: 400px;
+            padding: 10px;
+            border-left: 1px solid #ccc;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
+            text-align: left;
         }
 
         th, td {
             border: 1px solid black;
-            padding: 8px;
-            text-align: left;
+            padding: 10px;
             word-wrap: break-word;
-            overflow-x: auto;
-            white-space: pre-wrap;
+            max-width: 300px;
         }
 
         th {
@@ -122,25 +117,28 @@ urlpatterns = [
 <body>
 
     <img src="citilogo2.png" alt="Website Logo" id="logo">
-
     <h1>PASSPORT KYC INFO</h1>
 
     <!-- Upload Section -->
     <div id="uploadContainer">
-        <input type="file" id="files" name="files" multiple>
+        <input type="file" id="fileInput" multiple>
         <button id="uploadBtn">Upload and Process</button>
     </div>
 
-    <!-- Results Section -->
     <h2>Uploaded Files and Results:</h2>
-    <div id="resultsContainer">
+
+    <!-- Output Section -->
+    <div id="outputContainer">
+        <!-- Image will be displayed here -->
         <div id="imageContainer"></div>
+
+        <!-- OCR Data Table will be displayed here -->
         <div id="textContainer"></div>
     </div>
 
     <script>
+        const fileInput = document.getElementById('fileInput');
         const uploadBtn = document.getElementById('uploadBtn');
-        const fileInput = document.getElementById('files');
         const imageContainer = document.getElementById('imageContainer');
         const textContainer = document.getElementById('textContainer');
 
@@ -160,13 +158,13 @@ urlpatterns = [
                 body: formData
             });
 
-            const result = await response.text();
+            const result = await response.json(); // Assuming backend returns JSON
 
             // Clear previous content
             imageContainer.innerHTML = '';
             textContainer.innerHTML = '';
 
-            // Display uploaded image
+            // Display only the large uploaded image (No small image inside table)
             const file = fileInput.files[0];
             const reader = new FileReader();
             reader.onload = function (e) {
@@ -174,12 +172,22 @@ urlpatterns = [
             };
             reader.readAsDataURL(file);
 
-            // Append the result to the results container
-            textContainer.innerHTML = result;
+            // Convert JSON data into a table format
+            let tableHTML = `<table><tr><th>Field</th><th>Value</th></tr>`;
+            for (const key in result) {
+                if (key !== "image") {  // Ensure "image" is not added to the table
+                    tableHTML += `<tr><td>${key}</td><td>${result[key]}</td></tr>`;
+                }
+            }
+            tableHTML += `</table>`;
+
+            // Display table in textContainer
+            textContainer.innerHTML = tableHTML;
             fileInput.value = ""; // Reset file input
         });
     </script>
 
 </body>
 </html>
+
 
