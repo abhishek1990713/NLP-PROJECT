@@ -4,7 +4,7 @@ from . import views
 urlpatterns = [
     path("", views.index,name ='homes'),
     path("detect-object/", views.detect_objects, name='detect_objects'),
-    path('run_app/',views.run_app, 
+
 
 
 
@@ -165,7 +165,7 @@ urlpatterns = [
             imageContainer.innerHTML = '';
             textContainer.innerHTML = '';
 
-            // Display uploaded image
+            // Display uploaded image (Left Side)
             const file = fileInput.files[0];
             const reader = new FileReader();
             reader.onload = function (e) {
@@ -173,10 +173,12 @@ urlpatterns = [
             };
             reader.readAsDataURL(file);
 
-            // Convert JSON data into a table format
+            // Convert JSON data into a table format (Right Side)
             let tableHTML = `<table><tr><th>Field</th><th>Value</th></tr>`;
             for (const key in result) {
-                tableHTML += `<tr><td>${key}</td><td>${result[key]}</td></tr>`;
+                if (!result[key].includes("<img")) {  // Prevent image from appearing in table
+                    tableHTML += `<tr><td>${key}</td><td>${result[key]}</td></tr>`;
+                }
             }
             tableHTML += `</table>`;
 
@@ -188,4 +190,5 @@ urlpatterns = [
 
 </body>
 </html>
+
 
